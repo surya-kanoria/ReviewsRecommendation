@@ -1,6 +1,7 @@
 import numpy as np
 
 from nltk.corpus import sentiwordnet as swn
+from utils.file_utils import FileUtils
 
 
 class SentimentBasedLDA:
@@ -71,7 +72,6 @@ class SentimentBasedLDA:
         self.topics = {}
         self.sentiments = {}
         self.priorSentiment = {}
-
         alpha_vector = self.alpha * np.ones(self.num_of_topics)
         gamma_vector = self.gamma * np.ones(self.num_of_sentiments)
 
@@ -158,6 +158,7 @@ class SentimentBasedLDA:
                     self.n_ts[t, s] += 1
 
         print "training done"
+        self.checkpoint()
 
     def get_topics_distribution_per_document(self):
         return self.n_dts
@@ -190,6 +191,13 @@ class SentimentBasedLDA:
         self.n_dt = np.append(self.n_dt, n_dt, axis=0)
         self.n_d = np.append(self.n_d, n_d, axis=0)
         self.n_dts = np.append(self.n_dts, n_dts, axis=0)
+
+    def checkpoint(self):
+        FileUtils.save_multi_dimensional_file("../results/n_dts.txt", self.n_dts)
+        FileUtils.save_multi_dimensional_file("../results/n_dt.txt", self.n_dt)
+        FileUtils.save_multi_dimensional_file("../results/n_ts.txt", self.n_ts)
+        FileUtils.save_multi_dimensional_file("../results/n_vts.txt", self.n_vts)
+        FileUtils.save_single_dimenstional_file("../results/n_d.txt", self.n_d)
 
     def test_model(self, new_documents, max_iterations=5):
         existing_document_count = len(self.word_matrix)
@@ -225,3 +233,4 @@ class SentimentBasedLDA:
                     self.n_vts[word, t, s] += 1
                     self.n_ts[t, s] += 1
         print "running on test set over"
+        self.checkpoint()

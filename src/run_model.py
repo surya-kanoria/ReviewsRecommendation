@@ -18,7 +18,7 @@ print ("Reviews:", len(train_reviews))
 print ("Items:", len(train_items))
 print ("Users:", len(train_users))
 
-sampler.run(train_reviews, 5)
+sampler.run(train_reviews, 1)
 print ("Topic Distribution", sampler.get_topics_distribution_per_document())
 
 test_set = reviews_data.truncate(1000, 1500)
