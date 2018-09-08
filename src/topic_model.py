@@ -162,13 +162,44 @@ class SentimentBasedLDA:
     def get_topics_distribution_per_document(self):
         return self.n_dts
 
-    def test_model(self, reviews, max_iterations=5):
-        new_word_matrix = self.text_utils.transform(reviews)
-        np.append(self.word_matrix, new_word_matrix)
+    # TODO: combine this with initialize by making it more generic
+    # https://stats.stackexchange.com/a/9479/61047
+    def initialize_for_testrun(self, documents, existing_document_count):
+        number_of_docs = len(documents)
+        n_dt = np.zeros((number_of_docs, self.num_of_topics))
+        n_dts = np.zeros((number_of_docs, self.num_of_topics, self.num_of_sentiments))
+        n_d = np.zeros(number_of_docs)
+        alpha_vector = self.alpha * np.ones(self.num_of_topics)
+        gamma_vector = self.gamma * np.ones(self.num_of_sentiments)
+        for d in range(0, number_of_docs):
+            topic_distribution = self.sample_from_dirichlet(alpha_vector)
+            sentiment_distribution = np.zeros(
+                (self.num_of_topics, self.num_of_sentiments))
+            for t in range(self.num_of_topics):
+                sentiment_distribution[t, :] = self.sample_from_dirichlet(gamma_vector)
+            for i, w in enumerate(self.word_indices(self.word_matrix[existing_document_count + d, :])):
+                t = self.sample_from_categorical(topic_distribution)
+                s = self.sample_from_categorical(sentiment_distribution[t, :])
+                self.topics[(existing_document_count + d, i)] = t
+                self.sentiments[(existing_document_count + d, i)] = s
+                n_dt[d, t] += 1
+                n_dts[d, t, s] += 1
+                n_d[d] += 1
+                self.n_vts[w, t, s] += 1
+                self.n_ts[t, s] += 1
+        self.n_dt = np.append(self.n_dt, n_dt, axis=0)
+        self.n_d = np.append(self.n_d, n_d, axis=0)
+        self.n_dts = np.append(self.n_dts, n_dts, axis=0)
+
+    def test_model(self, new_documents, max_iterations=5):
+        existing_document_count = len(self.word_matrix)
+        new_word_matrix = self.text_utils.transform(new_documents)
+        self.word_matrix = np.append(self.word_matrix, new_word_matrix, axis=0)
         num_docs, vocabulary_size = self.word_matrix.shape
+        self.initialize_for_testrun(new_documents, existing_document_count)
         for iteration in range(max_iterations):
             print "Starting iteration %d of %d" % (iteration + 1, max_iterations)
-            for d in range(num_docs):
+            for d in range(existing_document_count, num_docs):
                 for i, word in enumerate(self.word_indices(self.word_matrix[d, :])):
                     t = self.topics[(d, i)]
                     s = self.sentiments[(d, i)]
