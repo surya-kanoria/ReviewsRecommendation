@@ -10,8 +10,6 @@ import lasagne.updates
 # Adapted from Lasagne
 
 def adagrad(loss_or_grads, params, learning_rate=1.0, epsilon=1e-6):
-
-
     grads = lasagne.updates.get_or_compute_grads(loss_or_grads, params)
     updates = OrderedDict()
     accus = []
@@ -22,11 +20,12 @@ def adagrad(loss_or_grads, params, learning_rate=1.0, epsilon=1e-6):
                              broadcastable=param.broadcastable)
         accu_new = accu + grad ** 2
         updates[accu] = accu_new
-        accus.append((accu,value.shape))
+        accus.append((accu, value.shape))
         updates[param] = param - (learning_rate * grad /
                                   T.sqrt(accu_new + epsilon))
 
-    return updates,accus
+    return updates, accus
+
 
 def reset_grads(accus):
     for accu in accus:

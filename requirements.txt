@@ -4,3 +4,5 @@ nltk
 pandas
 scipy
 dill
+theano
+lasagne

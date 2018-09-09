@@ -5,7 +5,7 @@ import lasagne
 import argparse
 
 import DCNN
-import dataUtils
+import data_utils
 import networks
 import utils
 
@@ -52,29 +52,29 @@ print('Loading the training data')
 # we order the input according to length and pad all sentences until the maximum length
 # at training time however, we will use the "length" array to shrink that matrix following the largest sentence within a batch
 # in practice, this means that batches are padded with 1 or 2 zeros, or aren't even padded at all.
-path = "/Users/surya.kanoria/Flipkart/Repositories/ugc-experiments/archives/dcnn/data/binarySentiment"
-train_x_indexes, train_y, train_lengths = dataUtils.read_and_sort_matlab_data(path + "train.txt",
+path = "/Users/surya.kanoria/Flipkart/Repositories/ugc-experiments/archives/dcnn/data/binarySentiment/"
+train_x_indexes, train_y, train_lengths = data_utils.read_and_sort_matlab_data(path + "train.txt",
                                                                               path + "train_lbl.txt")
-dev_x_indexes, dev_y, dev_lengths = dataUtils.read_and_sort_matlab_data(path + "valid.txt", path + "valid_lbl.txt")
-test_x_indexes, test_y, test_lengths = dataUtils.read_and_sort_matlab_data(path + "test.txt", path + "test_lbl.txt")
+dev_x_indexes, dev_y, dev_lengths = data_utils.read_and_sort_matlab_data(path + "valid.txt", path + "valid_lbl.txt")
+test_x_indexes, test_y, test_lengths = data_utils.read_and_sort_matlab_data(path + "test.txt", path + "test_lbl.txt")
 
 # train data
 n_train_batches = len(train_lengths) / hyperparas['batch_size']
 
 # dev data
 # to be able to do a correct evaluation, we pad a number of rows to get a multiple of the batch size
-dev_x_indexes_extended = dataUtils.pad_to_batch_size(dev_x_indexes, hyperparas['batch_size'])
-dev_y_extended = dataUtils.pad_to_batch_size(dev_y, hyperparas['batch_size'])
+dev_x_indexes_extended = data_utils.pad_to_batch_size(dev_x_indexes, hyperparas['batch_size'])
+dev_y_extended = data_utils.pad_to_batch_size(dev_y, hyperparas['batch_size'])
 n_dev_batches = dev_x_indexes_extended.shape[0] / hyperparas['batch_size']
 n_dev_samples = len(dev_y)
-dataUtils.extend_lenghts(dev_lengths, hyperparas['batch_size'])
+data_utils.extend_lengths(dev_lengths, hyperparas['batch_size'])
 
 # test data
-test_x_indexes_extended = dataUtils.pad_to_batch_size(test_x_indexes, hyperparas['batch_size'])
-test_y_extended = dataUtils.pad_to_batch_size(test_y, hyperparas['batch_size'])
+test_x_indexes_extended = data_utils.pad_to_batch_size(test_x_indexes, hyperparas['batch_size'])
+test_y_extended = data_utils.pad_to_batch_size(test_y, hyperparas['batch_size'])
 n_test_batches = test_x_indexes_extended.shape[0] / hyperparas['batch_size']
 n_test_samples = len(test_y)
-dataUtils.extend_lenghts(test_lengths, hyperparas['batch_size'])
+data_utils.extend_lengths(test_lengths, hyperparas['batch_size'])
 
 ######################
 # BUILD ACTUAL MODEL #
@@ -86,18 +86,18 @@ X_batch = T.imatrix('x')
 y_batch = T.ivector('y')
 
 # define/load the network
-output_layer = networks.buildDCNNPaper(batch_size=hyperparas['batch_size'], vocab_size=hyperparas['vocab_size'],
-                                       embeddings_size=hyperparas['word_vector_size'],
-                                       filter_sizes=hyperparas['filter_size_conv_layers'],
-                                       nr_of_filters=hyperparas['nr_of_filters_conv_layers'],
-                                       activations=hyperparas['activations'], ktop=hyperparas['ktop'],
-                                       dropout=hyperparas["dropout_value"], output_classes=hyperparas['output_classes'],
-                                       padding='last')
+output_layer = networks.build_dcnn_paper(batch_size=hyperparas['batch_size'], vocab_size=hyperparas['vocab_size'],
+                                         embeddings_size=hyperparas['word_vector_size'],
+                                         filter_sizes=hyperparas['filter_size_conv_layers'],
+                                         nr_of_filters=hyperparas['nr_of_filters_conv_layers'],
+                                         activations=hyperparas['activations'], ktop=hyperparas['ktop'],
+                                         dropout=hyperparas["dropout_value"], output_classes=hyperparas['output_classes'],
+                                         padding='last')
 
 # Training objective
 l2_layers = []
 for layer in lasagne.layers.get_all_layers(output_layer):
-    if isinstance(layer, (DCNN.embeddings.SentenceEmbeddingLayer, archives.dcnn.DCNN.convolutions.Conv1DLayerSplitted,
+    if isinstance(layer, (DCNN.embeddings.SentenceEmbeddingLayer, DCNN.convolutions.Conv1DLayerSplitted,
                           lasagne.layers.DenseLayer)):
         l2_layers.append(layer)
 loss_train = lasagne.objectives.aggregate(
@@ -136,7 +136,7 @@ print('Because of the default high validation frequency, only improvements are p
 best_validation_accuracy = 0
 epoch = 0
 batch_size = hyperparas["batch_size"]
-while (epoch < hyperparas['n_epochs']):
+while epoch < hyperparas['n_epochs']:
     epoch = epoch + 1
     permutation = numpy.random.permutation(n_train_batches)
     batch_counter = 0
